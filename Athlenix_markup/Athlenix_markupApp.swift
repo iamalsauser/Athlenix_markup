@@ -1,17 +1,17 @@
-//
-//  Athlenix_markupApp.swift
-//  Athlenix_markup
-//
-//  Created by Parth Sinh on 16/07/25.
-//
-
+import Supabase
 import SwiftUI
 
 @main
-struct Athlenix_markupApp: App {
+struct Athlinix_markupApp: App {
+    @StateObject var sessionManager = SessionManager()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(sessionManager)  // Inject into view hierarchy
+                .onAppear {
+                    Task { await sessionManager.restoreSessionIfNeeded() }
+                }
         }
     }
 }
