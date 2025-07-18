@@ -16,28 +16,47 @@ struct PlayerGameStatsView: View {
     @State private var errorMessage: String?
     @State private var playerIntID: Int?
 
-
     var body: some View {
-        VStack {
-            if isLoading {
-                ProgressView()
-            } else if !stats.isEmpty {
-                List(stats) { stat in
-                    VStack(alignment: .leading) {
-                        Text("Points: \(stat.points)")
-                        Text("Assists: \(stat.assists)")
-                        Text("Rebounds: \(stat.rebounds)")
+        NavigationStack {
+            VStack(spacing: 0) {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .padding()
+                } else if !stats.isEmpty {
+                    List(stats) { stat in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Points: \(stat.points)")
+                                .font(.headline)
+                            Text("Assists: \(stat.assists)")
+                                .font(.subheadline)
+                            Text("Rebounds: \(stat.rebounds)")
+                                .font(.subheadline)
+                        }
+                        .padding(.vertical, 4)
                     }
+                    .listStyle(.insetGrouped)
+                    .background(Color(.systemGroupedBackground))
+                } else {
+                    Text("No stats for this game.")
+                        .foregroundColor(.secondary)
+                        .font(.callout)
+                        .padding()
                 }
-            } else {
-                Text("No stats for this game.")
+                if let error = errorMessage {
+                    Text("Error: \(error)")
+                        .foregroundColor(.red)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .accessibilityLabel("Error: \(error)")
+                }
             }
-            if let error = errorMessage {
-                Text("Error: \(error)").foregroundColor(.red)
-            }
+            .background(Color(.systemBackground))
+            .navigationTitle("Game Stats")
+            .navigationBarTitleDisplayMode(.inline)
+            .task { await fetchStats() }
         }
-        .navigationTitle("Game Stats")
-        .task { await fetchStats() }
     }
 
     func fetchStats() async {

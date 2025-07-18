@@ -5,5 +5,5 @@ struct Player: Codable, Identifiable {
     let team_id: Int
     let name: String
     let number: Int?
-    let user_id: String?  // NEW: link to registered user
+    let user_id: String? // link to registered user
 }

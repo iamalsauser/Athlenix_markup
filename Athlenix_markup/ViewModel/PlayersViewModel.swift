@@ -7,9 +7,13 @@ class PlayersViewModel: ObservableObject {
     @Published var isLoading = false
 
     let teamID: Int
+    let coachUserID: String  // <-- Make sure to set the type
 
-    init(teamID: Int) {
+    // Initializer now requires coachUserID to be passed in
+    init(teamID: Int, coachUserID: String) {
         self.teamID = teamID
+        self.coachUserID = coachUserID
+
         Task {
             await fetch()
             await fetchProfiles()

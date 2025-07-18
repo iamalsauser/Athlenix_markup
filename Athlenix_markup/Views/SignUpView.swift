@@ -1,10 +1,3 @@
-//
-//  SignUpView.swift
-//  Athlenix_markup
-//
-//  Created by Parth Sinh on 16/07/25.
-//
-
 import Foundation
 import SwiftUI
 
@@ -17,15 +10,14 @@ struct SignupView: View {
     @State private var selectedRole: String = "player"
 
     @Binding var userID: String?
-    
-    
+    @EnvironmentObject var session: SessionManager                // <-- Add this line
 
     var body: some View {
         VStack(spacing: 20) {
             Text("Sign Up")
                 .font(.largeTitle)
                 .bold()
-            
+
             Picker("Select Role", selection: $selectedRole) {
                 Text("Coach").tag("coach")
                 Text("Player").tag("player")
@@ -93,19 +85,18 @@ struct SignupView: View {
                 password: password
             )
 
-            let user = response.user  // ✅ no optional — remove `if let`
-
-            // Save the profile after successful signup
+            let user = response.user
             try await SupabaseService.shared.createProfile(
                 userID: user.id,
                 displayName: displayName,
                 role: selectedRole
             )
-
-
-
             userID = user.id.uuidString
-            message = "Sign-up successful! Please verify your email before logging in."
+
+            // ------> ADD THIS to immediately detect and update the role <----------
+            await session.detectRole()
+
+            message = "Sign-up successful!"
         } catch {
             message = "Sign-up failed: \(error.localizedDescription)"
         }

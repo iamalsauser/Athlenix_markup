@@ -15,36 +15,50 @@ struct MyStatsView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        VStack {
-            if isLoading {
-                ProgressView("Loading your stats...")
-            } else if !stats.isEmpty {
-                List(stats) { stat in
-                    VStack(alignment: .leading) {
-                        Text("Game vs \(stat.opponentName)")
-                            .font(.headline)
-
-                        HStack {
-                            Text("🏀 Points: \(stat.points)")
-                            Text("🎯 Assists: \(stat.assists)")
-                            Text("🛡️ Rebounds: \(stat.rebounds)")
+        NavigationStack {
+            VStack(spacing: 0) {
+                if isLoading {
+                    ProgressView("Loading your stats...")
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .padding()
+                } else if !stats.isEmpty {
+                    List(stats) { stat in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Game vs \(stat.opponentName)")
+                                .font(.headline)
+                            HStack(spacing: 16) {
+                                Text("🏀 Points: \(stat.points)")
+                                Text("🎯 Assists: \(stat.assists)")
+                                Text("🛡️ Rebounds: \(stat.rebounds)")
+                            }
+                            .font(.subheadline)
                         }
-                        .font(.subheadline)
+                        .padding(.vertical, 4)
                     }
+                    .listStyle(.insetGrouped)
+                    .background(Color(.systemGroupedBackground))
+                } else {
+                    Text("No stats available yet.")
+                        .foregroundColor(.secondary)
+                        .font(.callout)
+                        .padding()
                 }
-            } else {
-                Text("No stats available yet.")
-            }
-            
 
-            if let error = errorMessage {
-                Text("Error: \(error)")
-                    .foregroundColor(.red)
+                if let error = errorMessage {
+                    Text("Error: \(error)")
+                        .foregroundColor(.red)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .accessibilityLabel("Error: \(error)")
+                }
             }
-        }
-        .navigationTitle("My Stats")
-        .task {
-            await loadStats()
+            .background(Color(.systemBackground))
+            .navigationTitle("My Stats")
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await loadStats()
+            }
         }
     }
 

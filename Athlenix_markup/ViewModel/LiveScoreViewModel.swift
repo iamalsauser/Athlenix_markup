@@ -1,12 +1,13 @@
-//
-//  LiveScoreViewModel.swift
-//  Athlenix_markup
-//
-//  Created by Parth Sinh on 17/07/25.
-//
-
-
 import Foundation
+
+struct PlayerStatInput: Codable, Hashable {
+    let player_id: Int
+    var points: Int
+    var assists: Int
+    var rebounds: Int
+}
+
+
 
 @MainActor
 class LiveScoreViewModel: ObservableObject {
@@ -28,12 +29,16 @@ class LiveScoreViewModel: ObservableObject {
 
     func fetchPlayers() async {
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
         do {
             players = try await SupabaseService.shared.fetchPlayers(teamID: teamID)
-            // Initialize statsByPlayerID dictionary
+            // Ensure every player has a PlayerStatInput entry in the dictionary
             for player in players {
-                statsByPlayerID[player.id] = PlayerStatInput()
+                if statsByPlayerID[player.id] == nil {
+                    statsByPlayerID[player.id] = PlayerStatInput(player_id: player.id, points: 0, assists: 0, rebounds: 0)
+
+                }
             }
         } catch {
             errorMessage = "Failed to load players: \(error.localizedDescription)"
@@ -45,17 +50,9 @@ class LiveScoreViewModel: ObservableObject {
         errorMessage = nil
         defer { isSubmitting = false }
 
-        // Prepare stats array as dictionary for JSON conversion
-        let statsArray: [[String: Any]] = statsByPlayerID.compactMap { (playerID, input) in
-            // Only submit players with any non-zero stats
-            if input.points == 0 && input.assists == 0 && input.rebounds == 0 { return nil }
-            return [
-                "player_id": playerID,
-                "points": input.points,
-                "assists": input.assists,
-                "rebounds": input.rebounds
-            ]
-        }
+        // Collect only those with nonzero stats
+        let statsArray: [PlayerStatInput] = statsByPlayerID.values
+            .filter { $0.points > 0 || $0.assists > 0 || $0.rebounds > 0 }
 
         if statsArray.isEmpty {
             errorMessage = "Please enter stats for at least one player before submitting."
@@ -68,16 +65,9 @@ class LiveScoreViewModel: ObservableObject {
                 coachID: coachID,
                 stats: statsArray
             )
-            // Success: You can navigate or show confirmation
+            // Optional: confirm/clear form/etc.
         } catch {
             errorMessage = "Failed to submit scorecard: \(error.localizedDescription)"
         }
     }
-}
-
-// Helper structure to store inputs for each player’s stats
-struct PlayerStatInput {
-    var points: Int = 0
-    var assists: Int = 0
-    var rebounds: Int = 0
 }

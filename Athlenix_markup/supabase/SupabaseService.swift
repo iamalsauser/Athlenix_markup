@@ -9,8 +9,9 @@ import Supabase
 struct InsertScorecardParams: Encodable {
     let p_game_id: Int
     let p_coach_id: String
-    let p_stats: String
+    let p_stats: [PlayerStatInput]
 }
+
 
 
 class SupabaseService {
@@ -47,13 +48,13 @@ class SupabaseService {
     // MARK: - Players
 
     func fetchPlayers(teamID: Int) async throws -> [Player] {
-        let response: PostgrestResponse<[Player]> = try await client
-            .from("players")
-            .select()
-            .eq("team_id", value: teamID)
-            .execute()
-        return response.value
-    }
+            let response: PostgrestResponse<[Player]> = try await client
+                .from("players")
+                .select()
+                .eq("team_id", value: teamID)
+                .execute()
+            return response.value
+        }
 
     func addPlayer(name: String, number: Int, teamID: Int, userID: String) async throws {
         let newPlayer = NewPlayerWithUser(name: name, number: number, team_id: teamID, user_id: userID)
@@ -175,6 +176,8 @@ class SupabaseService {
             .execute()
         return response.value
     }
+    
+    
 
     func fetchPlayerID(forUserID userID: String) async throws -> Int? {
         let response: PostgrestResponse<[Player]> = try await client
@@ -209,29 +212,24 @@ class SupabaseService {
     // MARK: - Scorecards (New for live match scoring)
 
     // Insert a new scorecard with player stats (calls insert_scorecard_with_stats RPC)
-    func insertScorecardWithStats(gameID: Int, coachID: String, stats: [[String: Any]]) async throws -> Int {
-        let jsonStatsData = try JSONSerialization.data(withJSONObject: stats)
-        guard let jsonStatsString = String(data: jsonStatsData, encoding: .utf8) else {
-            throw NSError(domain: "Invalid JSON Conversion", code: 0)
-        }
-
+    // Pass [PlayerStatInput] directly to the RPC as the params for p_stats
+    func insertScorecardWithStats(gameID: Int, coachID: String, stats: [PlayerStatInput]) async throws -> Int {
         let params = InsertScorecardParams(
             p_game_id: gameID,
             p_coach_id: coachID,
-            p_stats: jsonStatsString
+            p_stats: stats
         )
-
         let response: PostgrestResponse<[ScorecardIDResponse]> = try await client
             .rpc("insert_scorecard_with_stats", params: params)
             .execute()
 
-        guard let idString = response.value.first?.id,
-              let id = Int(idString) else {
+        guard let idString = response.value.first?.id, let id = Int(idString) else {
             throw NSError(domain: "Failed to get scorecard ID", code: 0)
         }
-
         return id
     }
+
+
 
 
     // Approve a scorecard
@@ -290,4 +288,6 @@ extension SupabaseService {
 
         return response.value
     }
+    
+    
 }

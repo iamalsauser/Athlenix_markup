@@ -30,6 +30,8 @@ class GamesViewModel: ObservableObject {
         }
     }
     
+    
+    
     // GamesViewModel.swift
     func fetchPlayers(forTeam teamID: Int) async throws -> [Player] {
         let response: PostgrestResponse<[Player]> = try await SupabaseService.shared.client

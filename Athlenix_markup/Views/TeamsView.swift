@@ -3,56 +3,79 @@ import SwiftUI
 struct TeamsView: View {
     @StateObject var viewModel: TeamsViewModel
     @State private var newTeamName = ""
+    @EnvironmentObject var session: SessionManager
     var onLogout: () -> Void
 
     var body: some View {
         NavigationStack {
-            VStack {
-                List(viewModel.teams) { team in
-                    NavigationLink(destination: PlayersView(viewModel: PlayersViewModel(teamID: team.id))) {
-                        Text(team.name)
+            VStack(spacing: 0) {
+                List {
+                    ForEach(viewModel.teams) { team in
+                        NavigationLink(
+                            destination: PlayersView(
+                                viewModel: PlayersViewModel(teamID: team.id, coachUserID: session.userID ?? "")
+                            )
+                        ) {
+                            Label(team.name, systemImage: "person.3.fill")
+                        }
                     }
                 }
+                .listStyle(.insetGrouped)
+                .background(Color(.systemGroupedBackground))
 
-                HStack {
+                HStack(spacing: 12) {
                     TextField("New Team Name", text: $newTeamName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    Button("Add") {
+                        .textFieldStyle(.roundedBorder)
+                        .padding(.vertical, 8)
+                        .accessibilityLabel("New Team Name")
+                    Button(action: {
                         Task {
                             await viewModel.addTeam(name: newTeamName)
                             newTeamName = ""
                         }
+                    }) {
+                        Label("Add", systemImage: "plus")
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
                     .disabled(newTeamName.isEmpty)
                 }
-                .padding()
+                .padding([.horizontal, .bottom])
 
                 if viewModel.isLoading {
                     ProgressView()
+                        .padding()
                 }
 
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .foregroundColor(.red)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .accessibilityLabel("Error: \(error)")
                 }
 
-                Spacer()
-
-                Button("Log Out") {
+                Button(action: {
                     Task {
                         try? await SupabaseService.shared.logoutUser()
                         onLogout()
                     }
+                }) {
+                    Label("Log Out", systemImage: "rectangle.portrait.and.arrow.right")
+                        .frame(maxWidth: .infinity)
+                        .padding()
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.red)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-                .padding(.horizontal)
-                .padding(.top, 8)
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .padding([.horizontal, .bottom])
+                .accessibilityLabel("Log Out")
             }
+            .background(Color(.systemBackground))
             .navigationTitle("Your Teams")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

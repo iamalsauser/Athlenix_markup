@@ -23,29 +23,40 @@ struct AddStatSheet: View {
             Form {
                 Section(header: Text("Player")) {
                     Text(player.name)
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                 }
 
                 Section(header: Text("Enter Stat Line")) {
                     TextField("Points", text: $points)
                         .keyboardType(.numberPad)
+                        .accessibilityLabel("Points")
                     TextField("Assists", text: $assists)
                         .keyboardType(.numberPad)
+                        .accessibilityLabel("Assists")
                     TextField("Rebounds", text: $rebounds)
                         .keyboardType(.numberPad)
+                        .accessibilityLabel("Rebounds")
                 }
             }
             .navigationTitle("Stat for \(player.name)")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(action: {
                         Task {
                             await saveStat()
                             dismiss()
                         }
-                    }.disabled(!valid)
+                    }) {
+                        Label("Save", systemImage: "checkmark")
+                    }
+                    .disabled(!valid)
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(action: { dismiss() }) {
+                        Label("Cancel", systemImage: "xmark")
+                    }
                 }
             }
         }

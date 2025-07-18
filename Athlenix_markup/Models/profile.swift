@@ -12,6 +12,7 @@ import SwiftUI
 
 struct Profile: Codable, Identifiable, Hashable {
     let id: String
+    let email: String?
     let display_name: String?
     let role: String?
 }

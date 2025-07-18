@@ -7,66 +7,108 @@ struct PlayersView: View {
     @State private var jerseyNumber = ""
 
     var body: some View {
-        VStack {
-            // Player List
-            List(viewModel.players) { player in
-                NavigationLink(destination: PlayerProfileView(userID: player.user_id ?? "")) {
-                    Text("\(player.name)  #\(player.number ?? 0)")
-                }
-            }
-
-            // Add Player Area
-            VStack(spacing: 10) {
-                // User Picker
-                Picker("Select a user", selection: $selectedUser) {
-                    ForEach(viewModel.profiles, id: \.id) { profile in
-                        Text(profile.display_name ?? "Unnamed")
-                            .tag(profile as Profile?)
-                    }
-                }
-                .pickerStyle(.wheel)
-
-                // Jersey Number Field
-                TextField("Jersey Number", text: $jerseyNumber)
-                    .keyboardType(.numberPad)
-                    .padding()
-                    .background(RoundedRectangle(cornerRadius: 10).stroke())
-
-                // Add Button
-                Button("Add Player") {
-                    if let profile = selectedUser,
-                       let number = Int(jerseyNumber) {
-                        Task {
-                            await viewModel.addPlayer(from: profile, number: number)
-                            jerseyNumber = ""
-                            selectedUser = nil
+        NavigationStack {
+            VStack(spacing: 0) {
+                List {
+                    ForEach(viewModel.profiles, id: \ .id) { profile in
+                        let player = viewModel.players.first { $0.user_id == profile.id }
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(profile.display_name ?? "Unnamed")
+                                    .font(.headline)
+                                if let player = player, let number = player.number {
+                                    Text("Jersey: #\(number)")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Text("Not on team")
+                                        .font(.subheadline)
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                            Spacer()
+                            if let player = player {
+                                NavigationLink(destination: PlayerProfileView(userID: player.user_id ?? "")) {
+                                    Label("View", systemImage: "person.fill")
+                                }
+                            } else {
+                                Button(action: {
+                                    selectedUser = profile
+                                }) {
+                                    Label("Add", systemImage: "plus")
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.green)
+                            }
                         }
+                        .padding(.vertical, 4)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.green)
-                .foregroundColor(.white)
-                .cornerRadius(10)
-            }
-            .padding()
-            .background(Color(.systemGroupedBackground))
-            .cornerRadius(12)
-            .padding()
+                .listStyle(.insetGrouped)
+                .background(Color(.systemGroupedBackground))
 
-            // Errors
-            if let error = viewModel.errorMessage {
-                Text(error)
-                    .foregroundColor(.red)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
+                if let selectedUser = selectedUser {
+                    VStack(spacing: 12) {
+                        Text("Add \(selectedUser.display_name ?? "Unnamed") to team")
+                            .font(.headline)
+                        TextField("Jersey Number", text: $jerseyNumber)
+                            .keyboardType(.numberPad)
+                            .textFieldStyle(.roundedBorder)
+                            .padding(.horizontal)
+                            .accessibilityLabel("Jersey Number")
+                        Button(action: {
+                            if let number = Int(jerseyNumber) {
+                                Task {
+                                    await viewModel.addPlayer(from: selectedUser, number: number)
+                                    jerseyNumber = ""
+                                    self.selectedUser = nil
+                                }
+                            }
+                        }) {
+                            Label("Add Player", systemImage: "plus")
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .disabled(jerseyNumber.isEmpty)
+                        .padding(.horizontal)
+                        Button("Cancel") {
+                            self.selectedUser = nil
+                            jerseyNumber = ""
+                        }
+                        .foregroundColor(.red)
+                    }
+                    .padding(.vertical)
+                    .background(Color(.systemGroupedBackground))
+                    .cornerRadius(12)
+                    .padding([.horizontal, .bottom])
+                }
+
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .accessibilityLabel("Error: \(error)")
+                }
+            }
+            .background(Color(.systemBackground))
+            .navigationTitle("Players")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(
+                        destination: GamesView(
+                            viewModel: GamesViewModel(teamID: viewModel.teamID),
+                            coachUserID: viewModel.coachUserID
+                        )
+                    ) {
+                        Label("Games", systemImage: "calendar")
+                    }
+                }
             }
         }
-        .navigationTitle("Players")
-        .navigationBarItems(trailing:
-            NavigationLink(destination: GamesView(viewModel: GamesViewModel(teamID: viewModel.teamID))) {
-                Text("Games")
-            }
-        )
     }
 }

@@ -16,7 +16,7 @@ struct MyGamesView: View {
     @State private var showOnlyUpcoming = true
 
     var sortedGames: [GameDetail] {
-        games.sorted { $0.date < $1.date } // Sort by date ascending
+        games.sorted { $0.date < $1.date }
     }
 
     var filteredGames: [GameDetail] {
@@ -28,12 +28,13 @@ struct MyGamesView: View {
 
     var body: some View {
         NavigationStack {
-            VStack {
+            VStack(spacing: 0) {
                 Toggle("Show only upcoming games", isOn: $showOnlyUpcoming)
                     .padding([.top, .horizontal])
 
                 if isLoading {
                     ProgressView("Loading your games...")
+                        .progressViewStyle(CircularProgressViewStyle())
                         .padding()
                 } else if !filteredGames.isEmpty {
                     List(filteredGames) { game in
@@ -41,28 +42,37 @@ struct MyGamesView: View {
                         NavigationLink(
                             destination: PlayerGameStatsView(gameID: game.id, userID: userID)
                         ) {
-                            VStack(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text("🏀 Opponent: \(game.opponent)")
                                     .foregroundColor(isUpcoming ? .green : .gray)
+                                    .font(.headline)
                                 Text("📅 Date: \(formattedDate(game.date))")
                                     .fontWeight(isUpcoming ? .bold : .regular)
+                                    .font(.subheadline)
                             }
                         }
                     }
-                    .listStyle(.plain)
+                    .listStyle(.insetGrouped)
+                    .background(Color(.systemGroupedBackground))
                 } else {
                     Text("No games found.")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
+                        .font(.callout)
                         .padding()
                 }
 
                 if let error = errorMessage {
                     Text("Error: \(error)")
                         .foregroundColor(.red)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
                         .padding()
+                        .accessibilityLabel("Error: \(error)")
                 }
             }
+            .background(Color(.systemBackground))
             .navigationTitle("My Games")
+            .navigationBarTitleDisplayMode(.inline)
             .task {
                 await loadGames()
             }

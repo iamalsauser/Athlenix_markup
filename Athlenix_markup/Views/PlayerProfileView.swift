@@ -14,22 +14,33 @@ struct PlayerProfileView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 16) {
-            if let profile = profile {
-                Text(profile.display_name ?? "Unnamed Player")
-                    .font(.title.bold())
-                // Add more info in future (e.g. avatar, email...)
-            } else if let error = errorMessage {
-                Text("Error: \(error)")
-                    .foregroundColor(.red)
-            } else {
-                ProgressView()
+        NavigationStack {
+            VStack(spacing: 24) {
+                if let profile = profile {
+                    Text(profile.display_name ?? "Unnamed Player")
+                        .font(.title.bold())
+                        .accessibilityAddTraits(.isHeader)
+                    // Add more info in future (e.g. avatar, email...)
+                } else if let error = errorMessage {
+                    Text("Error: \(error)")
+                        .foregroundColor(.red)
+                        .font(.callout)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .accessibilityLabel("Error: \(error)")
+                } else {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle())
+                        .padding()
+                }
             }
-        }
-        .padding()
-        .navigationTitle("Profile")
-        .task {
-            await loadProfile()
+            .padding()
+            .background(Color(.systemBackground))
+            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await loadProfile()
+            }
         }
     }
 
